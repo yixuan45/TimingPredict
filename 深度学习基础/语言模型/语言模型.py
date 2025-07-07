@@ -5,7 +5,6 @@ import re
 import matplotlib.pyplot as plt
 
 
-
 def read_time_machine():
     with open('local_poem.txt', 'r', encoding='utf-8') as f:
         lines = f.readlines()
@@ -72,13 +71,55 @@ freqs = [freq for token, freq in vocab.token_freqs]
 plt.figure(figsize=(6, 4))  # 设置画布大小
 # 绘制词频曲线（x 轴为 token 序号，y 轴为频率，双对数刻度）
 plt.plot(freqs, marker='.', linestyle='-', markersize=4)
-plt.xlabel('token: x')       # x 轴标签
-plt.ylabel('frequency: n(x)')# y 轴标签
-plt.xscale('log')            # x 轴设为对数刻度
-plt.yscale('log')            # y 轴设为对数刻度
-plt.tight_layout()           # 优化布局
-plt.show()                   # 显示图像
+plt.xlabel('token: x')  # x 轴标签
+plt.ylabel('frequency: n(x)')  # y 轴标签
+plt.xscale('log')  # x 轴设为对数刻度
+plt.yscale('log')  # y 轴设为对数刻度
+plt.tight_layout()  # 优化布局
+plt.show()  # 显示图像
 
-bigram_tokens=[pair for pair in zip(corpus[:-1], corpus[1:])]
-bigram_vocab=Vocab(bigram_tokens)
+bigram_tokens = [pair for pair in zip(corpus[:-1], corpus[1:])]
+bigram_vocab = Vocab(bigram_tokens)
 print(bigram_vocab.token_freqs[:10])
+
+
+def seq_data_iter_random(corpus, batch_size, num_steps):
+    """使用随机抽样生成一个小批量子序列"""
+    corpus = corpus[random.randint(0, num_steps - 1):]  # 截取从star_idx到末尾的列表
+    num_subseqs = (len(corpus) - 1) // num_steps
+    initial_indices = list(range(0, num_subseqs * num_steps, num_steps))
+    random.shuffle(initial_indices)
+
+    def data(pos):
+        return corpus[pos:pos + num_steps]
+
+    num_batches = num_subseqs // batch_size
+    for i in range(0, batch_size * num_batches, batch_size):
+        initial_indices_per_batch = initial_indices[i:i + batch_size]
+        X = [data(j) for j in initial_indices_per_batch]
+        Y = [data(j + 1) for j in initial_indices_per_batch]
+        yield torch.tensor(X), torch.tensor(Y)
+
+
+my_seq = list(range(35))
+for X, Y in seq_data_iter_random(my_seq, 2, 5):
+    print('X:', X, '\nY:', Y)
+
+
+# 保证两个相邻的小批量中的子序列在原始序列上也是相邻的
+def seq_data_iter_sequential(corpus, batch_size, num_steps):
+    """使用顺序分区生成一个小批量子序列"""
+    offest = random.randint(0, num_steps)
+    num_tokens = ((len(corpus) - offest - 1) // batch_size) * batch_size
+    Xs = torch.tensor(corpus[offset:offset + num_tokens])
+    Ys = torch.tensor(corpus[offset + 1:offset + 1 + num_tokens])
+    Xs, Ys = Xs.reshape(batch_size, -1), Ys.reshape(batch_size, -1)
+    num_batches = Xs.shape[1] // num_steps
+    for i in range(0, num_steps * num_batches, num_steps):
+        X = Xs[:, i:i + num_steps]
+        Y = Ys[:, i:i + num_steps]
+        yield X, Y
+
+
+for X, Y in seq_data_iter_sequential(corpus, 2, 5):
+    print('X:', X, '\nY:', Y)
