@@ -17,7 +17,7 @@ eval_interval=10
 batch_size=1000
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-raw_datasets = load_dataset('code_search_net', 'python')
+raw_datasets = load_dataset('code_search_net', 'python_data')
 datasets = raw_datasets['train'].filter(lambda x: 'apache/spark' in x['repository_name'])
 # 通过索引提取datasets数据的时候，返回一个dict，其中的value是一个字符串
 print(datasets[8]['whole_func_string'])

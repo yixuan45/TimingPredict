@@ -18,7 +18,7 @@ sequence_len = 64
 # 如果有GPU，该脚本将使用GPU进行计算
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-raw_datasets = load_dataset('code_search_net', 'python')
+raw_datasets = load_dataset('code_search_net', 'python_data')
 datasets = raw_datasets['train'].filter(lambda x: 'apache/spark' in x['repository_name'])
 
 
